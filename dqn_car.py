@@ -251,7 +251,7 @@ class Q_net(torch.nn.Module):
             return (size - (kernel_size - 1) - 1) // stride  + 1
             
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w, 8, 4), 4, 2), 3, 1)
-        convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(h, 8, 4), 4, 2), 3, 1)
+        convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h, 8, 4), 4, 2), 3, 1)
         linear_input_size = convw * convh * 32
         self.fc1 = torch.nn.Linear(linear_input_size, 256)
         self.fc1 = torch.nn.Linear(256, outputs)
@@ -300,7 +300,7 @@ class DeepQAgent(object):
         
         # Target model used to compute the target Q-values in training, updated
         # less frequently for increased stability.
-        self.target_q_net = Q_net(outputs=nb_actions)
+        self.target_q_net = Q_net(inputs=input_shape, outputs=nb_actions)
         #TODO: copy q_net
         """
         # Function computing Q-values targets as part of the computation graph
@@ -328,7 +328,7 @@ class DeepQAgent(object):
             return huber_loss(q_targets, q_acted, 1.0)
         """
         # Adam based SGD
-        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=learning_rate, momentum=momentum)
+        self.optimizer = torch.optim.Adam(self.q_net.parameters(), lr=learning_rate)
 
         #TODO self._metrics_writer = TensorBoardProgressWriter(freq=1, log_dir='metrics', model=criterion) if monitor else None
         #self._trainer.restore_from_checkpoint('models/oldmodels/model800000')
@@ -460,6 +460,8 @@ def transform_input(responses):
     return im_final
 
 def interpret_action(action):
+    car_controls.is_manual_gear = False
+
     car_controls.brake = 0
     car_controls.throttle = 1
     if action == 0:
@@ -500,7 +502,7 @@ def compute_reward(car_state):
         reward_dist = (math.exp(-beta*dist) - 0.5)
         reward_speed = (((car_state.speed - MIN_SPEED)/(MAX_SPEED - MIN_SPEED)) - 0.5)
         reward = reward_dist + reward_speed
-
+    reward = 1
     return reward
 
 def isDone(car_state, car_controls, reward):
@@ -510,6 +512,7 @@ def isDone(car_state, car_controls, reward):
     if car_controls.brake == 0:
         if car_state.speed <= 5:
             done = 1
+    done = 0
     return done
 
 client = airsim.CarClient()
