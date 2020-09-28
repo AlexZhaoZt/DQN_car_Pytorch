@@ -502,7 +502,6 @@ def compute_reward(car_state):
         reward_dist = (math.exp(-beta*dist) - 0.5)
         reward_speed = (((car_state.speed - MIN_SPEED)/(MAX_SPEED - MIN_SPEED)) - 0.5)
         reward = reward_dist + reward_speed
-    reward = 1
     return reward
 
 def isDone(car_state, car_controls, reward):
@@ -512,7 +511,6 @@ def isDone(car_state, car_controls, reward):
     if car_controls.brake == 0:
         if car_state.speed <= 5:
             done = 1
-    done = 0
     return done
 
 client = airsim.CarClient()
